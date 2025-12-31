@@ -1,0 +1,1796 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lua代码AI生成器</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/monokai.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #95a5a6;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .editor-section, .ai-section {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(25, 25, 35, 0.9);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .section-header {
+            background: linear-gradient(90deg, #2c3e50, #34495e);
+            padding: 18px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .section-header h2 {
+            font-size: 1.6rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-header i {
+            color: #3498db;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #7f8c8d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #6c7b7d;
+        }
+        
+        .btn-success {
+            background: #2ecc71;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #27ae60;
+            transform: translateY(-2px);
+        }
+        
+        .code-editor {
+            height: 500px;
+            overflow: hidden;
+        }
+        
+        .CodeMirror {
+            height: 100%;
+            font-size: 16px;
+            line-height: 1.5;
+            padding: 15px 0;
+        }
+        
+        .ai-panel {
+            padding: 25px;
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .prompt-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 25px;
+        }
+        
+        .prompt-area label {
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #3498db;
+            font-size: 1.1rem;
+        }
+        
+        #ai-prompt {
+            flex: 1;
+            background: rgba(40, 40, 50, 0.9);
+            border: 2px solid #34495e;
+            border-radius: 10px;
+            color: #e0e0e0;
+            padding: 15px;
+            font-size: 1rem;
+            resize: none;
+            line-height: 1.5;
+        }
+        
+        #ai-prompt:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .ai-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .ai-options {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .option-select {
+            background: rgba(40, 40, 50, 0.9);
+            border: 1px solid #34495e;
+            border-radius: 6px;
+            color: #e0e0e0;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        
+        .result-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .result-content {
+            flex: 1;
+            background: rgba(40, 40, 50, 0.9);
+            border: 2px solid #34495e;
+            border-radius: 10px;
+            padding: 15px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+        
+        .templates-section {
+            background: rgba(25, 25, 35, 0.9);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            margin-top: 20px;
+        }
+        
+        .templates-section h2 {
+            font-size: 1.6rem;
+            margin-bottom: 20px;
+            color: #3498db;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .template-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .template-card {
+            background: rgba(40, 40, 50, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .template-card:hover {
+            transform: translateY(-5px);
+            border-color: #3498db;
+            box-shadow: 0 10px 20px rgba(52, 152, 219, 0.2);
+        }
+        
+        .template-card h3 {
+            color: #2ecc71;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .template-card p {
+            color: #bdc3c7;
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #95a5a6;
+            border-top: 1px solid #34495e;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .loading i {
+            font-size: 2rem;
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+        
+        .loading p {
+            color: #3498db;
+        }
+        
+        .error {
+            color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .success {
+            color: #2ecc71;
+            background: rgba(46, 204, 113, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        @media (max-width: 1200px) {
+            .main-content {
+                flex-direction: column;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .button-group {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            
+            .ai-controls {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .ai-options {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-robot"></i> Lua代码AI生成器</h1>
+            <p class="subtitle">使用AI生成高质量的Lua代码。输入自然语言描述，获取Lua代码片段，或在编辑器中直接编写代码。</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="editor-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-code"></i> Lua代码编辑器</h2>
+                    <div class="button-group">
+                        <button class="btn btn-secondary" id="clear-btn">
+                            <i class="fas fa-broom"></i> 清空
+                        </button>
+                        <button class="btn btn-primary" id="run-btn">
+                            <i class="fas fa-play"></i> 运行代码
+                        </button>
+                    </div>
+                </div>
+                <div class="code-editor">
+                    <textarea id="lua-code">-- Lua AI代码生成器
+-- 在这里编写或粘贴您的Lua代码
+-- 或者使用右侧的AI功能生成代码
+
+-- 示例：计算斐波那契数列
+function fibonacci(n)
+    if n <= 1 then
+        return n
+    else
+        return fibonacci(n-1) + fibonacci(n-2)
+    end
+end
+
+-- 打印前10个斐波那契数
+print("斐波那契数列前10项:")
+for i = 0, 9 do
+    print("F(" .. i .. ") = " .. fibonacci(i))
+end
+
+-- 示例：表格操作
+local fruits = {"apple", "banana", "orange", "grape"}
+
+print("\\n水果列表:")
+for i, fruit in ipairs(fruits) do
+    print(i .. ": " .. fruit)
+end
+
+-- 示例：使用表实现字典
+local person = {
+    name = "张三",
+    age = 25,
+    occupation = "软件工程师"
+}
+
+print("\\n人员信息:")
+for key, value in pairs(person) do
+    print(key .. ": " .. tostring(value))
+end</textarea>
+                </div>
+            </div>
+            
+            <div class="ai-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-magic"></i> AI代码生成</h2>
+                    <div class="button-group">
+                        <button class="btn btn-success" id="generate-btn">
+                            <i class="fas fa-bolt"></i> 生成代码
+                        </button>
+                    </div>
+                </div>
+                <div class="ai-panel">
+                    <div class="prompt-area">
+                        <label for="ai-prompt"><i class="fas fa-keyboard"></i> 描述您想要的Lua代码:</label>
+                        <textarea id="ai-prompt" placeholder="例如：创建一个Lua函数，用于计算两个矩阵的乘积，并处理边界情况...">创建一个Lua函数，用于验证电子邮件地址格式的有效性</textarea>
+                    </div>
+                    
+                    <div class="ai-controls">
+                        <div class="ai-options">
+                            <div>
+                                <label for="complexity">代码复杂度:</label>
+                                <select id="complexity" class="option-select">
+                                    <option value="simple">简单</option>
+                                    <option value="medium" selected>中等</option>
+                                    <option value="complex">复杂</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="style">代码风格:</label>
+                                <select id="style" class="option-select">
+                                    <option value="functional">函数式</option>
+                                    <option value="oop" selected>面向对象</option>
+                                    <option value="procedural">过程式</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="loading" id="loading-indicator">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>AI正在生成代码，请稍候...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="error" id="error-message"></div>
+                    <div class="success" id="success-message"></div>
+                    
+                    <div class="result-area">
+                        <div class="result-header">
+                            <h3><i class="fas fa-code-branch"></i> 生成的代码</h3>
+                            <button class="btn btn-primary" id="apply-btn">
+                                <i class="fas fa-download"></i> 应用到编辑器
+                            </button>
+                        </div>
+                        <div class="result-content" id="generated-code">
+                            -- 生成的代码将在这里显示
+                            -- 1. 输入您的需求描述
+                            -- 2. 点击"生成代码"按钮
+                            -- 3. AI将为您生成Lua代码
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="templates-section">
+            <h2><i class="fas fa-th-large"></i> Lua代码模板</h2>
+            <div class="template-cards">
+                <div class="template-card" data-template="table">
+                    <h3><i class="fas fa-table"></i> 表格操作</h3>
+                    <p>Lua表格的常见操作：遍历、排序、过滤、映射等。</p>
+                </div>
+                <div class="template-card" data-template="function">
+                    <h3><i class="fas fa-function"></i> 函数定义</h3>
+                    <p>创建函数、处理参数、返回值、错误处理等示例。</p>
+                </div>
+                <div class="template-card" data-template="file">
+                    <h3><i class="fas fa-file-code"></i> 文件操作</h3>
+                    <p>读写文件、处理CSV/JSON数据、目录遍历等。</p>
+                </div>
+                <div class="template-card" data-template="oop">
+                    <h3><i class="fas fa-object-group"></i> 面向对象</h3>
+                    <p>使用Lua实现面向对象编程：类、继承、多态等。</p>
+                </div>
+                <div class="template-card" data-template="algorithm">
+                    <h3><i class="fas fa-sort-amount-down"></i> 算法实现</h3>
+                    <p>排序、搜索、图算法、动态规划等常见算法。</p>
+                </div>
+                <div class="template-card" data-template="game">
+                    <h3><i class="fas fa-gamepad"></i> 游戏开发</h3>
+                    <p>游戏循环、状态管理、物理模拟等游戏相关代码。</p>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 Lua AI代码生成器 | 本工具为模拟演示，实际AI功能需要接入相应API</p>
+            <p>提示：在真实环境中，您需要将AI生成功能连接到GPT或类似的大语言模型API</p>
+        </footer>
+    </div>
+
+    <!-- CodeMirror 资源 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/lua/lua.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/edit/matchbrackets.min.js"></script>
+    
+    <script>
+        // 初始化CodeMirror编辑器
+        const editor = CodeMirror.fromTextArea(document.getElementById('lua-code'), {
+            mode: 'lua',
+            theme: 'monokai',
+            lineNumbers: true,
+            lineWrapping: true,
+            matchBrackets: true,
+            indentUnit: 4,
+            tabSize: 4,
+            autoCloseBrackets: true,
+            extraKeys: {
+                "Ctrl-Space": "autocomplete"
+            }
+        });
+        
+        // 设置编辑器初始高度
+        editor.setSize("100%", "100%");
+        
+        // 获取DOM元素
+        const clearBtn = document.getElementById('clear-btn');
+        const runBtn = document.getElementById('run-btn');
+        const generateBtn = document.getElementById('generate-btn');
+        const applyBtn = document.getElementById('apply-btn');
+        const aiPrompt = document.getElementById('ai-prompt');
+        const generatedCode = document.getElementById('generated-code');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const errorMessage = document.getElementById('error-message');
+        const successMessage = document.getElementById('success-message');
+        const complexitySelect = document.getElementById('complexity');
+        const styleSelect = document.getElementById('style');
+        const templateCards = document.querySelectorAll('.template-card');
+        
+        // 预定义的代码模板
+        const codeTemplates = {
+            table: `-- Lua表格操作示例
+local myTable = {10, 23, 5, 17, 31, 12}
+
+-- 1. 遍历表格
+print("表格元素:")
+for i, v in ipairs(myTable) do
+    print("索引 " .. i .. ": " .. v)
+end
+
+-- 2. 表格排序
+table.sort(myTable, function(a, b) return a < b end)
+print("\\n排序后表格:")
+for i, v in ipairs(myTable) do
+    print(v)
+end
+
+-- 3. 表格映射 (使用自定义函数)
+function mapTable(tbl, func)
+    local result = {}
+    for i, v in ipairs(tbl) do
+        result[i] = func(v)
+    end
+    return result
+end
+
+local squaredTable = mapTable(myTable, function(x) return x * x end)
+print("\\n平方后的表格:")
+for i, v in ipairs(squaredTable) do
+    print(v)
+end
+
+-- 4. 表格过滤
+function filterTable(tbl, predicate)
+    local result = {}
+    for i, v in ipairs(tbl) do
+        if predicate(v) then
+            table.insert(result, v)
+        end
+    end
+    return result
+end
+
+local filteredTable = filterTable(myTable, function(x) return x > 15 end)
+print("\\n大于15的元素:")
+for i, v in ipairs(filteredTable) do
+    print(v)
+end
+
+-- 5. 使用字典式表格
+local person = {
+    name = "李四",
+    age = 30,
+    city = "北京",
+    occupation = "工程师"
+}
+
+print("\\n人员信息:")
+for key, value in pairs(person) do
+    print(key .. ": " .. tostring(value))
+end`,
+            
+            function: `-- Lua函数定义和用法示例
+
+-- 1. 基本函数定义
+function greet(name)
+    return "你好, " .. name .. "!"
+end
+
+print(greet("张三"))
+
+-- 2. 多返回值函数
+function calculate(a, b)
+    local sum = a + b
+    local difference = a - b
+    local product = a * b
+    local quotient = a / b
+    return sum, difference, product, quotient
+end
+
+local s, d, p, q = calculate(10, 2)
+print("\\n10和2的计算结果:")
+print("和: " .. s)
+print("差: " .. d)
+print("积: " .. p)
+print("商: " .. q)
+
+-- 3. 可变参数函数
+function sumAll(...)
+    local numbers = {...}
+    local total = 0
+    for i, num in ipairs(numbers) do
+        total = total + num
+    end
+    return total
+end
+
+print("\\n可变参数求和:")
+print("1+2+3 = " .. sumAll(1, 2, 3))
+print("1+2+3+4+5 = " .. sumAll(1, 2, 3, 4, 5))
+
+-- 4. 高阶函数
+function applyFunction(func, value)
+    return func(value)
+end
+
+local double = function(x) return x * 2 end
+local square = function(x) return x * x end
+
+print("\\n高阶函数示例:")
+print("double(5) = " .. applyFunction(double, 5))
+print("square(5) = " .. applyFunction(square, 5))
+
+-- 5. 闭包
+function createCounter()
+    local count = 0
+    return function()
+        count = count + 1
+        return count
+    end
+end
+
+print("\\n闭包计数器:")
+local counter = createCounter()
+print("第一次: " .. counter())
+print("第二次: " .. counter())
+print("第三次: " .. counter())
+
+-- 6. 错误处理
+function safeDivide(a, b)
+    if b == 0 then
+        return nil, "除数不能为零"
+    end
+    return a / b, nil
+end
+
+print("\\n安全除法:")
+local result, err = safeDivide(10, 2)
+if err then
+    print("错误: " .. err)
+else
+    print("10 / 2 = " .. result)
+end
+
+local result2, err2 = safeDivide(10, 0)
+if err2 then
+    print("错误: " .. err2)
+else
+    print("10 / 0 = " .. result2)
+end`,
+            
+            file: `-- Lua文件操作示例
+
+-- 1. 写入文件
+function writeToFile(filename, content)
+    local file, err = io.open(filename, "w")
+    if not file then
+        return false, "无法打开文件: " .. err
+    end
+    
+    file:write(content)
+    file:close()
+    return true, "文件写入成功"
+end
+
+local success, message = writeToFile("example.txt", "这是第一行\\n这是第二行\\n这是第三行")
+print("写入文件结果: " .. message)
+
+-- 2. 读取文件
+function readFromFile(filename)
+    local file, err = io.open(filename, "r")
+    if not file then
+        return nil, "无法打开文件: " .. err
+    end
+    
+    local content = file:read("*a")
+    file:close()
+    return content, nil
+end
+
+print("\\n读取文件内容:")
+local content, err = readFromFile("example.txt")
+if err then
+    print("错误: " .. err)
+else
+    print(content)
+end
+
+-- 3. 逐行读取文件
+function readLines(filename)
+    local lines = {}
+    local file, err = io.open(filename, "r")
+    if not file then
+        return nil, "无法打开文件: " .. err
+    end
+    
+    for line in file:lines() do
+        table.insert(lines, line)
+    end
+    
+    file:close()
+    return lines, nil
+end
+
+print("\\n逐行读取文件:")
+local lines, lineErr = readLines("example.txt")
+if lineErr then
+    print("错误: " .. lineErr)
+else
+    for i, line in ipairs(lines) do
+        print("行 " .. i .. ": " .. line)
+    end
+end
+
+-- 4. 追加到文件
+function appendToFile(filename, content)
+    local file, err = io.open(filename, "a")
+    if not file then
+        return false, "无法打开文件: " .. err
+    end
+    
+    file:write(content)
+    file:close()
+    return true, "内容追加成功"
+end
+
+local appendSuccess, appendMsg = appendToFile("example.txt", "\\n这是追加的内容")
+print("\\n追加结果: " .. appendMsg)
+
+-- 5. 处理CSV数据
+function parseCSV(filename)
+    local data = {}
+    local file, err = io.open(filename, "r")
+    if not file then
+        return nil, "无法打开文件: " .. err
+    end
+    
+    local headers = {}
+    local isFirstLine = true
+    
+    for line in file:lines() do
+        local row = {}
+        local values = {}
+        
+        -- 简单的CSV解析（不处理引号内的逗号）
+        for value in line:gmatch("[^,]+") do
+            table.insert(values, value:gsub("^%s*(.-)%s*$", "%1"))
+        end
+        
+        if isFirstLine then
+            headers = values
+            isFirstLine = false
+        else
+            for i, header in ipairs(headers) do
+                row[header] = values[i] or ""
+            end
+            table.insert(data, row)
+        end
+    end
+    
+    file:close()
+    return data, nil
+end
+
+-- 6. JSON模拟（简单实现）
+function tableToJSON(tbl)
+    local result = "{"
+    local first = true
+    
+    for key, value in pairs(tbl) do
+        if not first then
+            result = result .. ","
+        end
+        
+        if type(key) == "string" then
+            result = result .. '"' .. key .. '":'
+        end
+        
+        if type(value) == "string" then
+            result = result .. '"' .. value .. '"'
+        elseif type(value) == "number" then
+            result = result .. tostring(value)
+        elseif type(value) == "boolean" then
+            result = result .. tostring(value)
+        elseif type(value) == "table" then
+            result = result .. tableToJSON(value)
+        end
+        
+        first = false
+    end
+    
+    result = result .. "}"
+    return result
+end
+
+local sampleData = {
+    name = "张三",
+    age = 30,
+    city = "北京"
+}
+
+print("\\n表格转JSON:")
+print(tableToJSON(sampleData))`,
+            
+            oop: `-- Lua面向对象编程示例
+
+-- 1. 基础类实现
+local Person = {}
+
+function Person:new(name, age)
+    local obj = {
+        name = name or "未命名",
+        age = age or 0
+    }
+    
+    setmetatable(obj, self)
+    self.__index = self
+    return obj
+end
+
+function Person:introduce()
+    return "我叫" .. self.name .. ", 今年" .. self.age .. "岁。"
+end
+
+function Person:celebrateBirthday()
+    self.age = self.age + 1
+    return self.name .. "过生日了，现在" .. self.age .. "岁！"
+end
+
+-- 创建Person实例
+local person1 = Person:new("张三", 25)
+print(person1:introduce())
+print(person1:celebrateBirthday())
+
+-- 2. 继承
+local Student = Person:new()  -- 继承Person
+
+function Student:new(name, age, studentId, major)
+    local obj = Person:new(self, name, age)  -- 调用父类构造函数
+    obj.studentId = studentId or "未知"
+    obj.major = major or "未定专业"
+    
+    return obj
+end
+
+function Student:introduce()
+    local baseIntro = Person.introduce(self)  -- 调用父类方法
+    return baseIntro .. " 我的学号是" .. self.studentId .. ", 专业是" .. self.major .. "。"
+end
+
+function Student:study(subject)
+    return self.name .. "正在学习" .. (subject or self.major)
+end
+
+-- 创建Student实例
+local student1 = Student:new("李四", 20, "S12345", "计算机科学")
+print("\\n" .. student1:introduce())
+print(student1:study())
+print(student1:study("数据结构"))
+
+-- 3. 多态示例
+local Teacher = Person:new()
+
+function Teacher:new(name, age, subject)
+    local obj = Person:new(self, name, age)
+    obj.subject = subject or "未定科目"
+    return obj
+end
+
+function Teacher:introduce()
+    local baseIntro = Person.introduce(self)
+    return baseIntro .. " 我是一名教师，教授" .. self.subject .. "。"
+end
+
+function Teacher:teach()
+    return self.name .. "正在教授" .. self.subject
+end
+
+-- 多态演示
+print("\\n多态演示:")
+local people = {
+    Person:new("王五", 35),
+    Student:new("赵六", 19, "S67890", "数学"),
+    Teacher:new("孙老师", 45, "物理")
+}
+
+for i, person in ipairs(people) do
+    print(person:introduce())
+end
+
+-- 4. 封装（通过闭包）
+function createBankAccount(initialBalance)
+    local balance = initialBalance or 0
+    
+    local account = {}
+    
+    function account:deposit(amount)
+        if amount <= 0 then
+            return false, "存款金额必须为正数"
+        end
+        balance = balance + amount
+        return true, "存款成功，新余额: " .. balance
+    end
+    
+    function account:withdraw(amount)
+        if amount <= 0 then
+            return false, "取款金额必须为正数"
+        end
+        if amount > balance then
+            return false, "余额不足"
+        end
+        balance = balance - amount
+        return true, "取款成功，新余额: " .. balance
+    end
+    
+    function account:getBalance()
+        return balance
+    end
+    
+    return account
+end
+
+print("\\n银行账户封装示例:")
+local myAccount = createBankAccount(1000)
+print("初始余额: " .. myAccount:getBalance())
+
+local depositSuccess, depositMsg = myAccount:deposit(500)
+print(depositMsg)
+
+local withdrawSuccess, withdrawMsg = myAccount:withdraw(200)
+print(withdrawMsg)
+
+-- 尝试直接访问balance会失败（封装）
+print("余额(通过方法): " .. myAccount:getBalance())
+
+-- 5. 操作符重载
+local Vector = {}
+
+function Vector:new(x, y)
+    local obj = {x = x or 0, y = y or 0}
+    setmetatable(obj, self)
+    self.__index = self
+    return obj
+end
+
+function Vector:__add(other)
+    return Vector:new(self.x + other.x, self.y + other.y)
+end
+
+function Vector:__tostring()
+    return "Vector(" .. self.x .. ", " .. self.y .. ")"
+end
+
+local v1 = Vector:new(10, 20)
+local v2 = Vector:new(5, 15)
+local v3 = v1 + v2  -- 使用重载的+操作符
+
+print("\\n向量操作符重载:")
+print("v1 = " .. tostring(v1))
+print("v2 = " .. tostring(v2))
+print("v1 + v2 = " .. tostring(v3))`,
+            
+            algorithm: `-- Lua算法实现示例
+
+-- 1. 排序算法
+-- 快速排序
+function quickSort(arr, low, high)
+    low = low or 1
+    high = high or #arr
+    
+    if low < high then
+        local pi = partition(arr, low, high)
+        quickSort(arr, low, pi - 1)
+        quickSort(arr, pi + 1, high)
+    end
+end
+
+function partition(arr, low, high)
+    local pivot = arr[high]
+    local i = low - 1
+    
+    for j = low, high - 1 do
+        if arr[j] < pivot then
+            i = i + 1
+            arr[i], arr[j] = arr[j], arr[i]
+        end
+    end
+    
+    arr[i + 1], arr[high] = arr[high], arr[i + 1]
+    return i + 1
+end
+
+-- 测试快速排序
+local numbers = {64, 34, 25, 12, 22, 11, 90}
+print("原始数组:")
+print(table.concat(numbers, ", "))
+
+quickSort(numbers)
+print("\\n快速排序后:")
+print(table.concat(numbers, ", "))
+
+-- 2. 搜索算法
+-- 二分查找
+function binarySearch(arr, target)
+    local low, high = 1, #arr
+    
+    while low <= high do
+        local mid = math.floor((low + high) / 2)
+        local midValue = arr[mid]
+        
+        if midValue == target then
+            return mid
+        elseif midValue < target then
+            low = mid + 1
+        else
+            high = mid - 1
+        end
+    end
+    
+    return -1  -- 未找到
+end
+
+local sortedNumbers = {11, 12, 22, 25, 34, 64, 90}
+local target = 25
+local index = binarySearch(sortedNumbers, target)
+print("\\n二分查找 " .. target .. " 在数组中的位置: " .. (index > 0 and index or "未找到"))
+
+-- 3. 图算法
+-- 深度优先搜索
+function depthFirstSearch(graph, start, visited)
+    visited = visited or {}
+    visited[start] = true
+    
+    local result = {start}
+    
+    if graph[start] then
+        for _, neighbor in ipairs(graph[start]) do
+            if not visited[neighbor] then
+                local subResult = depthFirstSearch(graph, neighbor, visited)
+                for _, node in ipairs(subResult) do
+                    table.insert(result, node)
+                end
+            end
+        end
+    end
+    
+    return result
+end
+
+-- 测试图算法
+local graph = {
+    A = {"B", "C"},
+    B = {"A", "D", "E"},
+    C = {"A", "F"},
+    D = {"B"},
+    E = {"B", "F"},
+    F = {"C", "E"}
+}
+
+print("\\n深度优先搜索从A开始:")
+local dfsResult = depthFirstSearch(graph, "A")
+print(table.concat(dfsResult, " -> "))
+
+-- 4. 动态规划
+-- 斐波那契数列（带记忆化）
+local fibCache = {}
+
+function fibonacciDP(n)
+    if n <= 1 then
+        return n
+    end
+    
+    if fibCache[n] then
+        return fibCache[n]
+    end
+    
+    fibCache[n] = fibonacciDP(n-1) + fibonacciDP(n-2)
+    return fibCache[n]
+end
+
+print("\\n动态规划斐波那契数列:")
+for i = 0, 10 do
+    print("F(" .. i .. ") = " .. fibonacciDP(i))
+end
+
+-- 5. 字符串算法
+-- KMP字符串匹配
+function buildKMPTable(pattern)
+    local table = {}
+    local len = 0  -- 最长前缀后缀长度
+    table[1] = 0
+    local i = 2
+    
+    while i <= #pattern do
+        if pattern:sub(i, i) == pattern:sub(len + 1, len + 1) then
+            len = len + 1
+            table[i] = len
+            i = i + 1
+        else
+            if len ~= 0 then
+                len = table[len]
+            else
+                table[i] = 0
+                i = i + 1
+            end
+        end
+    end
+    
+    return table
+end
+
+function KMPSearch(text, pattern)
+    local n, m = #text, #pattern
+    if m == 0 then return 1 end
+    
+    local kmpTable = buildKMPTable(pattern)
+    local i, j = 1, 1
+    
+    while i <= n do
+        if text:sub(i, i) == pattern:sub(j, j) then
+            i = i + 1
+            j = j + 1
+        end
+        
+        if j == m + 1 then
+            return i - j  -- 找到匹配
+        elseif i <= n and text:sub(i, i) ~= pattern:sub(j, j) then
+            if j ~= 1 then
+                j = kmpTable[j-1] + 1
+            else
+                i = i + 1
+            end
+        end
+    end
+    
+    return -1  -- 未找到
+end
+
+local text = "ABABDABACDABABCABAB"
+local pattern = "ABABCABAB"
+local pos = KMPSearch(text, pattern)
+print("\\nKMP字符串搜索:")
+print("在文本中查找模式："..模式)
+如果pos>0，则
+print("在位置"..POS.."找到匹配")
+其他
+打印("未找到匹配")
+结束‘，
+            
+游戏：'--Lua游戏开发示例
+
+-- 1. 简单游戏循环框架
+本地游戏={}
+
+函数游戏：new()
+局部obj={
+running=true，
+lasttime=0，
+deltaTime=0，
+实体={}
+    }
+    
+setmetatable(obj，self)
+self.__index=self
+返回对象
+结束
+
+函数游戏：更新(dt)
+-- 更新所有实体
+对于i，ipairs中的实体(self.ities)do
+如果entity.update，则
+实体：更新(dt)
+结束
+结束
+    
+-- 游戏逻辑更新
+-- 这里可以添加碰撞检测、状态管理等
+end
+
+function Game:render()
+    -- 渲染所有实体
+    for i, entity in ipairs(self.entities) do
+        if entity.render then
+            entity:render()
+        end
+    end
+    
+    -- 渲染UI
+    -- print("游戏渲染中...")
+end
+
+function Game:run()
+    print("游戏开始!")
+    
+    -- 模拟游戏循环
+    while self.running do
+        local currentTime = os.time()  -- 模拟时间
+        self.deltaTime = currentTime - self.lastTime
+        self.lastTime = currentTime
+        
+        -- 处理输入（模拟）
+        self:handleInput()
+        
+        -- 更新游戏状态
+        self:update(self.deltaTime)
+        
+        -- 渲染
+        self:render()
+        
+        -- 简单退出条件
+        if #self.entities > 10 then  -- 示例条件
+            self.running = false
+        end
+    end
+    
+    print("游戏结束!")
+end
+
+function Game:handleInput()
+    -- 模拟输入处理
+    -- 在实际游戏中，这里会处理键盘、鼠标等输入
+end
+
+-- 2. 游戏实体示例
+local Entity = {}
+
+function Entity:new(x, y)
+    local obj = {
+        x = x or 0,
+        y = y or 0,
+        width = 50,
+        height = 50,
+        velocityX = 0,
+        velocityY = 0,
+        color = {1, 1, 1}  -- RGB颜色
+    }
+    
+    setmetatable(obj, self)
+    self.__index = self
+    return obj
+end
+
+function Entity:update(dt)
+    -- 更新位置
+    self.x = self.x + self.velocityX * dt
+    self.y = self.y + self.velocityY * dt
+    
+    -- 简单边界检查
+    if self.x < 0 then self.x = 0; self.velocityX = -self.velocityX end
+    if self.x > 800 then self.x = 800; self.velocityX = -self.velocityX end
+    if self.y < 0 then self.y = 0; self.velocityY = -self.velocityY end
+    if self.y > 600 then self.y = 600; self.velocityY = -self.velocityY end
+end
+
+function Entity:render()
+    -- 模拟渲染
+    print(string.format("渲染实体在 (%.1f, %.1f)", self.x, self.y))
+end
+
+-- 3. 玩家实体
+local Player = Entity:new()
+
+function Player:new(x, y)
+    local obj = Entity:new(self, x, y)
+    obj.speed = 200
+    obj.health = 100
+    obj.score = 0
+    
+    return obj
+end
+
+function Player:update(dt)
+    -- 玩家特定逻辑
+    -- 在实际游戏中，这里会根据输入更新速度和位置
+    
+    -- 调用父类更新
+    Entity.update(self, dt)
+end
+
+function Player:takeDamage(amount)
+    self.health = self.health - amount
+    if self.health <= 0 then
+        print("玩家死亡!")
+        return true
+    end
+    return false
+end
+
+-- 4. 敌人实体
+local Enemy = Entity:new()
+
+function Enemy:new(x, y, target)
+    local obj = Entity:new(self, x, y)
+    obj.target = target
+    obj.speed = 100
+    obj.damage = 10
+    
+    -- 随机颜色
+    obj.color = {math.random(), math.random(), math.random()}
+    
+    return obj
+end
+
+function Enemy:update(dt)
+    -- 简单AI：朝目标移动
+    if self.target then
+        local dx = self.target.x - self.x
+        local dy = self.target.y - self.y
+        local distance = math.sqrt(dx*dx + dy*dy)
+        
+        if distance > 0 then
+            self.velocityX = (dx / distance) * self.speed
+            self.velocityY = (dy / distance) * self.speed
+        end
+    end
+    
+    -- 调用父类更新
+    Entity.update(self, dt)
+end
+
+-- 5. 游戏状态管理
+local GameState = {
+    MENU = "menu",
+    PLAYING = "playing",
+    PAUSED = "paused",
+    GAME_OVER = "game_over"
+}
+
+local StateMachine = {}
+
+function StateMachine:new()
+    local obj = {
+        currentState = GameState.MENU,
+        states = {}
+    }
+    
+    setmetatable(obj, self)
+    self.__index = self
+    return obj
+end
+
+function StateMachine:addState(name, callbacks)
+    self.states[name] = callbacks
+end
+
+function StateMachine:changeState(newState)
+    if self.states[self.currentState] and self.states[self.currentState].exit then
+        self.states[self.currentState]:exit()
+    end
+    
+    self.currentState = newState
+    
+    if self.states[newState] and self.states[newState].enter then
+        self.states[newState]:enter()
+    end
+    
+    print("状态改变为: " .. newState)
+end
+
+function StateMachine:update(dt)
+    if self.states[self.currentState] and self.states[self.currentState].update then
+        self.states[self.currentState]:update(dt)
+    end
+end
+
+-- 6. 简单物理模拟
+local Physics = {}
+
+function Physics:checkCollision(a, b)
+    return a.x < b.x + b.width and
+           a.x + a.width > b.x and
+           a.y < b.y + b.height and
+           a.y + a.height > b.y
+end
+
+function Physics:resolveCollision(entity1, entity2)
+    -- 简单碰撞响应：反转速度
+    entity1.velocityX = -entity1.velocityX
+    entity1.velocityY = -entity1.velocityY
+    entity2.velocityX = -entity2.velocityX
+    entity2.velocityY = -entity2.velocityY
+    
+    print("碰撞检测!")
+end
+
+-- 演示游戏创建
+print("游戏开发示例:")
+local game = Game:new()
+
+-- 创建玩家
+local player = Player:new(400, 300)
+table.insert(game.entities, player)
+
+-- 创建敌人
+for i = 1, 3 do
+    local enemy = Enemy:new(
+        math.random(0, 800),
+        math.random(0, 600),
+        player
+    )
+    table.insert(game.entities, enemy)
+end
+
+print("创建了 " .. #game.entities .. " 个游戏实体")
+
+-- 状态机示例
+local stateMachine = StateMachine:new()
+
+stateMachine:addState(GameState.MENU, {
+    enter = function() print("进入菜单") end,
+    update = function(dt) print("菜单更新") end,
+    exit = function() print("退出菜单") end
+})
+
+stateMachine:addState(GameState.PLAYING, {
+    enter = function() print("开始游戏") end,
+    update = function(dt) print("游戏进行中") end,
+    exit = function() print("退出游戏") end
+})
+
+stateMachine:changeState(GameState.MENU)
+stateMachine:changeState(GameState.PLAYING)
+
+print("\\n这是一个Lua游戏开发框架示例。")
+print("在实际游戏中，您需要图形库（如LÖVE）来处理真正的渲染和输入。")`
+        };
+        
+        // 模拟AI生成的代码（在实际应用中，这里应该调用真正的AI API）
+        const aiGeneratedCode = {
+            "email": `-- 电子邮件验证函数
+function validateEmail(email)
+    -- 检查输入是否为字符串
+    if type(email) ~= "string" then
+        return false, "电子邮件必须是字符串"
+    end
+    
+    -- 基本长度检查
+    if #email < 5 or #email > 254 then
+        return false, "电子邮件长度无效"
+    end
+    
+    -- 检查是否包含@符号
+    local atPos = email:find("@")
+    if not atPos then
+        return false, "电子邮件必须包含@符号"
+    end
+    
+    -- 检查@符号不在开头或结尾
+    if atPos == 1 or atPos == #email then
+        return false, "@符号位置无效"
+    end
+    
+    -- 分割本地部分和域名部分
+    local localPart = email:sub(1, atPos - 1)
+    local domainPart = email:sub(atPos + 1)
+    
+    -- 验证本地部分
+    if #localPart < 1 or #localPart > 64 then
+        return false, "本地部分长度无效"
+    end
+    
+    -- 本地部分不能以点开头或结尾
+    if localPart:sub(1, 1) == "." or localPart:sub(-1) == "." then
+        return false, "本地部分不能以点开头或结尾"
+    end
+    
+    -- 本地部分不能包含连续的点
+    if localPart:find("%.%.") then
+        return false, "本地部分不能包含连续的点"
+    end
+    
+    -- 验证本地部分字符（简化版本）
+    local localPattern = "^[%w%+%-%=%._]+$"
+    if not localPart:match(localPattern) then
+        return false, "本地部分包含无效字符"
+    end
+    
+    -- 验证域名部分
+    if #domainPart < 1 or #domainPart > 253 then
+        return false, "域名部分长度无效"
+    end
+    
+    -- 域名部分不能以点开头或结尾
+    if domainPart:sub(1, 1) == "." or domainPart:sub(-1) == "." then
+        return false, "域名部分不能以点开头或结尾"
+    end
+    
+    -- 域名部分不能包含连续的点
+    if domainPart:find("%.%.") then
+        return false, "域名部分不能包含连续的点"
+    end
+    
+    -- 分割域名标签
+    local labels = {}
+    for label in domainPart:gmatch("[^.]+") do
+        table.insert(labels, label)
+    end
+    
+    -- 检查标签数量
+    if #labels < 2 then
+        return false, "域名必须包含至少两个标签"
+    end
+    
+    -- 验证每个标签
+    for i, label in ipairs(labels) do
+        -- 标签长度检查
+        if #label < 1 or #label > 63 then
+            return false, "域名标签长度无效: " .. label
+        end
+        
+        -- 标签不能以连字符开头或结尾
+        if label:sub(1, 1) == "-" or label:sub(-1) == "-" then
+            return false, "域名标签不能以连字符开头或结尾: " .. label
+        end
+        
+        -- 标签字符验证（字母、数字、连字符）
+        if not label:match("^[%a%d][%a%d%-]*[%a%d]$") then
+            return false, "域名标签包含无效字符: " .. label
+        end
+    end
+    
+    -- 顶级域名（最后一部分）必须是字母
+    local topLevelDomain = labels[#labels]
+    if not topLevelDomain:match("^[%a]+$") then
+        return false, "顶级域名必须是字母: " .. topLevelDomain
+    end
+    
+    -- 检查顶级域名长度
+    if #topLevelDomain < 2 then
+        return false, "顶级域名太短"
+    end
+    
+    -- 如果所有检查都通过
+    return true, "电子邮件格式有效"
+end
+
+-- 测试函数
+function testEmailValidation()
+    local testEmails = {
+        "user@example.com",
+        "user.name@example.co.uk",
+        "user+tag@example.org",
+        "invalid-email",
+        "@example.com",
+        "user@.com",
+        "user@com",
+        "user@example.c",
+        "user@-example.com",
+        "user@example-.com",
+        "user..name@example.com",
+        ".user@example.com",
+        "user.@example.com",
+        "user@example..com",
+        "user@example.c0m"
+    }
+    
+    print("电子邮件验证测试:")
+    print("=================")
+    
+    for i, email in ipairs(testEmails) do
+        local isValid, message = validateEmail(email)
+        local status = isValid and "✓ 有效" or "✗ 无效"
+        print(string.format("%-30s %-10s %s", email, status, message))
+    end
+end
+
+-- 运行测试
+testEmailValidation()`,
+            
+            "default": `-- AI生成的Lua代码将在这里显示
+-- 请在上方输入您的需求描述
+-- 然后点击"生成代码"按钮
+
+-- 示例：根据您的需求生成的代码
+-- 这里会根据复杂度、风格等选项调整生成的代码`
+        };
+        
+        // 清空编辑器
+        clearBtn.addEventListener('click', function() {
+            if (confirm("确定要清空编辑器中的所有代码吗？")) {
+                editor.setValue("");
+                showSuccess("编辑器已清空");
+            }
+        });
+        
+        // 运行代码（模拟）
+        runBtn.addEventListener('click', function() {
+            const code = editor.getValue();
+            if (code.trim() === "") {
+                showError("编辑器中没有代码可运行");
+                return;
+            }
+            
+            showSuccess("代码运行成功！请查看控制台输出");
+            // 注意：在浏览器中无法直接运行Lua代码
+            // 这是一个模拟功能，实际需要Lua解释器
+            console.log("模拟运行Lua代码:");
+            console.log(code);
+        });
+        
+        // 生成AI代码
+        generateBtn.addEventListener('click', function() {
+            const prompt = aiPrompt.value.trim();
+            if (prompt === "") {
+                showError("请输入代码生成描述");
+                return;
+            }
+            
+            // 显示加载指示器
+            loadingIndicator.style.display = 'block';
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+            
+            // 模拟AI生成延迟
+            setTimeout(() => {
+                // 根据提示生成代码（这里使用模拟数据）
+                let generated = aiGeneratedCode.default;
+                
+                // 检查是否有匹配的预定义代码
+                if (prompt.toLowerCase().includes("email") || 
+                    prompt.toLowerCase().includes("邮件")) {
+                    generated = aiGeneratedCode.email;
+                } else {
+                    // 根据复杂度调整代码
+                    const complexity = complexitySelect.value;
+                    const style = styleSelect.value;
+                    
+                    generated = `-- 根据您的描述生成的Lua代码
+-- 需求: ${prompt}
+-- 复杂度: ${complexity}
+-- 风格: ${style}
+
+-- ${complexity === 'simple' ? '简单' : complexity === 'medium' ? '中等' : '复杂'}级别代码示例
+function processRequest(input)
+    -- ${style === 'functional' ? '函数式风格' : style === 'oop' ? '面向对象风格' : '过程式风格'}
+    ${complexity === 'complex' ? 'local result = {}\n    ' : ''}
+    
+    -- 处理逻辑
+    if type(input) == "string" then
+        ${complexity !== 'simple' ? '-- 字符串处理逻辑\n        ' : ''}
+        return "处理字符串: " .. input
+    elseif type(input) == "table" then
+        ${complexity === 'complex' ? '-- 复杂表格处理\n        for k, v in pairs(input) do\n            result[k] = v\n        end\n        return result' : 'return "处理表格，元素数量: " .. #input'}
+    else
+        return "不支持的数据类型: " .. type(input)
+    end
+end
+
+-- 测试代码
+${complexity !== 'simple' ? 'local testData = {"测试1", "测试2", "测试3"}\n' : ''}
+print("${prompt.substring(0, 30)}${prompt.length > 30 ? '...' : ''}")
+${complexity !== 'simple' ? 'print(processRequest(testData))\n' : ''}
+print(processRequest("示例输入"))
+${complexity === 'complex' ? 'print(processRequest({key = "value", num = 42}))' : ''}`;
+                }
+                
+// 更新生成的代码显示
+generatedCode.textContent=generated；
+                
+// 隐藏加载指示器
+loadingIndicator.style.display='none'；
+showSuccess("代码生成成功！")；
+}, 1500); // 1.5秒模拟延迟
+        });
+        
+// 应用生成的代码到编辑器
+applyBtn.addEventListener('click'，函数(){
+常量代码=generatedCode.textContent；
+if(！code||code.includes("生成的代码将在这里显示")){
+showError("没有可应用的代码")；
+返回；
+            }
+            
+// 获取当前编辑器内容
+Const currentCode=editor.getValue()；
+            
+// 将生成的代码添加到编辑器（追加）
+Const newCode=currentCode+"\n\n--=====AI生成的代码=====\n"+代码；
+editor.setValue(newCode)；
+            
+showSuccess("代码已应用到编辑器")；
+        });
+        
+// 模板卡片点击事件
+templateCards.forEach(card=>{
+card.addEventListener('单击'，功能(){
+Const templateType=this.getattribute('数据模板')；
+常量模板代码=代码模板[templateType]；
+                
+如果(templateCode){
+// 将模板代码添加到编辑器
+Const currentCode=editor.getValue()；
+Const newCode=currentCode+"\n\n--=====模板代码："+
+卡片。querySelector('h3').textContent+"=====\n"+templateCode；
+editor.setValue(newCode)；
+                    
+//更新AI提示
+aiPrompt.value='请基于${card.querySelector('H3').textContent}模板，扩展更复杂的功能‘；
+                    
+showSuccess(‘已添加"${card.querySelector('h3').textContent}"模板代码‘)；
+                }
+            });
+        });
+        
+// 显示错误消息
+函数showError(消息){
+errorMessage.textContent=message；
+errorMessage.style.display='块'；
+successMessage.style.display='无'；
+            
+//3秒后自动隐藏
+setTimeout(()=>{
+errorMessage.style.display='无'；
+},3000);
+        }
+        
+// 显示成功消息
+函数showSuccess(message){
+successMessage.textContent=message；
+successMessage.style.display='块'；
+errorMessage.style.display='无'；
+            
+//3秒后自动隐藏
+setTimeout(()=>{
+successMessage.style.display='无'；
+},3000);
+        }
+        
+// 初始化示例
+console.log("Lua AI代码生成器已加载")；
+console.log("这是一个模拟界面，实际AI功能需要接入相应的API")；
+</script>
+</body>
+</html>
