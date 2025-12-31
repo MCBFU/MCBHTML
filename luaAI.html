@@ -1,37 +1,37 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lua代码AI生成器</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/monokai.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+<meta charset="UTF-8">
+<元名称=“视口”内容=“宽度=设备宽度，初始比例=1.0”>
+<title>Lua代码AI生成器</title>
+<link rel="stylesheet"href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+<link rel="stylesheet"href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/monokai.min.css">
+<link rel="stylesheet"href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+* {
+页边距：0；
+填充：0；
+框大小：边框框；
+字体系列：'Segoe UI'，宋体，日内瓦，Verdana，无衬线；
         }
         
-        body {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: #e0e0e0;
-            min-height: 100vh;
-            padding: 20px;
+正文{
+背景：线性梯度(135度，#1a1a2e 0%，#16213e 100%)；
+颜色：#e0e0e0；
+最低高度：100vh；
+填料：20px；
         }
         
-        .container {
-            max-width: 1600px;
-            margin: 0 auto;
+.container{
+最大宽度：1600px；
+页边距：0自动；
         }
         
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            border-bottom: 2px solid #3498db;
+页眉{
+文本对齐：居中；
+底边距：30px；
+填料：20px；
+border-bottom:2px实体#3498db；
         }
         
         h1 {
